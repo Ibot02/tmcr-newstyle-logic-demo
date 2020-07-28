@@ -34,7 +34,7 @@ import Control.Lens hiding (view)
 import Control.Lens.TH
 
 staticRoot :: String
-staticRoot = "http://ibot02.github.io/tmcr-newstyle-logic-demo/static/"
+staticRoot = "https://ibot02.github.io/tmcr-newstyle-logic-demo/static/"
 
 data Action = NoOp
             | AdvanceRNG
