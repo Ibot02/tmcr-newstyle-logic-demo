@@ -253,7 +253,7 @@ optionConfiguration model = div_ [] $ text "Flags:" : span_ [] [
 
 astEditor :: Model -> View Action
 astEditor model = snd (iter helper model') id where
-            model' = fmap (\() -> (pure () :: Free PreTypecheckValueF (), \context -> div_ [] [selection context (pure ()) options])) $ model ^. modelAST
+            model' = fmap (\() -> (pure () :: Free PreTypecheckValueF (), \context -> div_ [class_ "ast"] [selection context (pure ()) options])) $ model ^. modelAST
             selection :: (a -> Free PreTypecheckValueF ()) -> a -> [(String, View Action, a)] -> View Action
             selection context defaultOption options = select_ [onChange (setChoice context defaultOption options . fromMisoString)] (options ^.. folded . _2)
             setChoice context defaultOption options value = EditSyntaxTree $ context $ fromMaybe defaultOption $ options ^? folded . filtered ((== value) . (^. _1)) . _3
@@ -296,7 +296,8 @@ astEditor model = snd (iter helper model') id where
             helper' (PTCConstantTargetF _) context = [constantSelection [] (model ^.. modelOneWayWarps . folded . to warpName) (context . wrap . PTCConstantTargetF)]
             helper' (PTCConstantDoorF _) context = [constantSelection [] (model ^.. modelDoors . folded . to (doorName1 &&& doorName2) . each) (context . wrap . PTCConstantDoorF)]
             helper' (PTCGivenFlagF _) context = [selection (context . wrap . PTCGivenFlagF) "" $ ("", option_ [] [], "") : (fmap (\s -> (s, option_ [] [text $ toMisoString s], s)) $ model ^.. modelFlagSet . folded)]
---todo: Dropdown, Atomset
+            helper' (PTCGivenDropdownF _) context = [selection (context . wrap . PTCGivenDropdownF) "" $ ("", option_ [] [], "") : (fmap (\s -> (s, option_ [] [text $ toMisoString s], s)) $ model ^.. modelDropdownOptions . to Map.keysSet . folded)]
+            helper' (PTCAtomSetF _) context = [textarea_ [class_ "ast-atom-set", onChange (EditSyntaxTree . context . wrap . PTCAtomSetF . Set.fromList . Prelude.lines . fromMisoString)] []]
             helper' PTCIdentityF _ = []
             helper' PTCEmptyF _ = []
             helper' (PTCComposeF x1 x2) context = pairHelper PTCComposeF x1 x2 context
