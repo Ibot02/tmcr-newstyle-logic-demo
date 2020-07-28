@@ -29,6 +29,9 @@ div.room-data-dialog > *:nth-child(3) {
 div.ast {
 	display: block;
 }
+div.ast-pair {
+	flex-flow: row;
+}
 div.ast-if-then-else {
 	display: table;
 }
