@@ -1,0 +1,40 @@
+div {
+	display: flex;
+	flex-flow: column;
+}
+form {
+	display: flex;
+	flex-flow: column;
+}
+span > form {
+	display: inline;
+}
+
+body > div > div {
+	padding: 1em;
+}
+
+div.room-data-dialog {
+	flex-flow: row;
+}
+div.room-data-dialog > *:nth-child(1) {
+	flex-grow: 1;
+}
+div.room-data-dialog > *:nth-child(2) {
+	flex-grow: 1;
+}
+div.room-data-dialog > *:nth-child(3) {
+	flex-grow: 1;
+}
+div.ast {
+	display: block;
+}
+div.ast-if-then-else {
+	display: table;
+}
+div.ast-if-then-else > div {
+	display: table-row;
+}
+div.ast-if-then-else > div > *{
+	display: table-cell;
+}
