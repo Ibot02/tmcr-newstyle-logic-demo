@@ -45,6 +45,7 @@ data Action = NoOp
             | RemoveDoor String
             | RemoveWarp String
             | FlagAddAction FlagAddAction
+            | DropdownConfigAction DropdownConfigAction
             | RemoveFlag String
             -- ...
 deriving instance Eq Action
@@ -65,6 +66,12 @@ data FlagAddAction = AddFlag
                    | SetFlagName String
                    deriving (Eq, Ord, Show)
 
+data DropdownConfigAction = AddDropdown
+                          | SetDropdownName String
+                          | SetDropdownOptions String [String]
+                          | RemoveDropdown String
+                          deriving (Eq, Ord, Show)
+
 data Model = Model {
           _modelAST :: Free PreTypecheckValueF ()
         , _modelRooms :: Set String
@@ -73,6 +80,7 @@ data Model = Model {
         , _modelFlagSet :: Set String
         , _modelCurrentFlagNameInput :: String
         , _modelDropdownOptions :: Map String [String]
+        , _modelCurrentDropdownNameInput :: String
         , _modelActiveFlags :: Set String
         , _modelCurrentDropdownSelections :: Map String String
         , _modelRoomDataDialog :: RoomDataDialogModel
@@ -122,6 +130,7 @@ initialModel = do
     , _modelCurrentDropdownSelections = Map.empty
     , _modelRoomDataDialog = RoomDataDialogModel "" "" "" "" "" True
     , _modelCurrentFlagNameInput = ""
+    , _modelCurrentDropdownNameInput = ""
     , _modelRNG = fst $ random g
     }
 
@@ -154,6 +163,14 @@ updateModel (FlagAddAction a) = fromTransition $ case a of
                     name <- use modelCurrentFlagNameInput
                     modelFlagSet <>= Set.singleton name
                 SetFlagName s -> modelCurrentFlagNameInput .= s
+updateModel (DropdownConfigAction a) = fromTransition $ case a of
+                AddDropdown -> do
+                    name <- use modelCurrentDropdownNameInput
+                    modelDropdownOptions <>= Map.singleton name []
+                SetDropdownName s -> modelCurrentDropdownNameInput .= s
+                RemoveDropdown s -> do
+                    modelDropdownOptions %= Map.delete s
+                    modelCurrentDropdownSelections %= Map.delete s
 updateModel (RemoveRoom r) = fromTransition $ do
                     modelRooms %= Set.delete r
                     modelOneWayWarps %= Set.filter (\w -> warpSourceRoom w /= r && warpTargetRoom w /= r)
@@ -243,13 +260,18 @@ newWarp model = div_ [] [ text "Add Warp" , form_ [onSubmit (RoomAddAction AddDo
                 ]]
 
 optionConfiguration :: Model -> View Action
-optionConfiguration model = div_ [] $ text "Flags:" : span_ [] [
-            form_ [onSubmit (FlagAddAction AddFlag)] [
-                  input_ [onChange (FlagAddAction . SetFlagName . fromMisoString)]
-                , input_ [type_ "submit", value_ "+"]
-            ]] : fmap (\flagName -> span_ [] [button_ [name_ "Remove", onClick (RemoveFlag flagName)] [text "-"], text (toMisoString flagName)]) (model ^.. modelFlagSet . folded)
---todo Dropdowns
-
+optionConfiguration model = div_ [class_ "option-config"] [
+              div_ [class_ "flag-config"] $ text "Flags:" : span_ [] [
+                form_ [onSubmit (FlagAddAction AddFlag)] [
+                      input_ [onChange (FlagAddAction . SetFlagName . fromMisoString)]
+                    , input_ [type_ "submit", value_ "+"]
+                ]] : fmap (\flagName -> span_ [] [button_ [name_ "Remove", onClick (RemoveFlag flagName)] [text "-"], text (toMisoString flagName)]) (model ^.. modelFlagSet . folded)
+            , div_ [class_ "dropdown-config"] $ text "Dropdowns:" : span_ [] [
+                form_ [onSubmit (DropdownConfigAction AddDropdown)] [
+                      input_ [onChange (DropdownConfigAction . SetDropdownName . fromMisoString)]
+                    , input_ [type_ "submit", value_ "+"]
+                ]] : fmap (\dropdownName -> span_ [] [button_ [name_ "Remove", onClick (DropdownConfigAction $ RemoveDropdown dropdownName)] [text "-"], text (toMisoString dropdownName), textarea_ [onChange (DropdownConfigAction . SetDropdownOptions dropdownName . Prelude.lines . fromMisoString)] []]) (model ^.. modelDropdownOptions . to Map.keysSet . folded)
+            ]
 
 astEditor :: Model -> View Action
 astEditor model = snd (iter helper model') id where
