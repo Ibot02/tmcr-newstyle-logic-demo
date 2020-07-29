@@ -26,7 +26,16 @@ div.room-data-dialog > *:nth-child(2) {
 div.room-data-dialog > *:nth-child(3) {
 	flex-grow: 1;
 }
+div.option-config {
+	flex-flow: row;
+}
+div.dropdown-config > span:not(:first-child) > textarea {
+	display: block;
+}
 div.ast {
+	display: block;
+}
+div.ast > select {
 	display: block;
 }
 div.ast-pair {
@@ -40,4 +49,11 @@ div.ast-if-then-else > div {
 }
 div.ast-if-then-else > div > *{
 	display: table-cell;
+}
+div.option-select {
+	flex-flow: row;
+	flex-wrap: wrap;
+}
+div.option-select > span > * {
+	margin: 2px;
 }
