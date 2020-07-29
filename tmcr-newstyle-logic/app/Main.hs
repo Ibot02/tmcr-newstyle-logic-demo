@@ -316,7 +316,7 @@ astEditor model = snd (iter helper model') id where
                 ] ++ [("Make Symmetric Function", option_ [disabled_ True] [text "Make Symmetric Function"], pure ())]
             helper :: PreTypecheckValueF (Free PreTypecheckValueF (), (Free PreTypecheckValueF () -> Free PreTypecheckValueF ()) -> View Action) -> (Free PreTypecheckValueF (), (Free PreTypecheckValueF () -> Free PreTypecheckValueF ()) -> View Action)
             helper f = (wrap (fmap fst f), \context -> div_ [class_ "ast"] (selection context (pure ()) options : helper' f context))
-            constantSelection tags names context = selection context Data.TMCR.Logic.All $ ("All", option_ [] [text "All"], Data.TMCR.Logic.All) : fmap (\t -> ("Tagged " ++ t, option_ [] [text $ toMisoString ("Tagged" ++ t)], Tagged t)) tags ++ fmap (\n -> ("Named " ++ n, option_ [] [text $ toMisoString ("Named \"" ++ n ++ "\"")], Named n)) names
+            constantSelection tags names context = selection context Data.TMCR.Logic.All $ ("All", option_ [] [text "All"], Data.TMCR.Logic.All) : fmap (\t -> ("Tagged " ++ t, option_ [] [text $ toMisoString ("Tagged " ++ t)], Tagged t)) tags ++ fmap (\n -> ("Named " ++ n, option_ [] [text $ toMisoString ("Named " ++ n)], Named n)) names
             pairHelper c (v1, x1) (v2, x2) context = [div_ [class_ "ast-pair"] [
                           x1 (\v -> context $ wrap $ c v v2)
                         , x2 (\v -> context $ wrap $ c v1 v)
