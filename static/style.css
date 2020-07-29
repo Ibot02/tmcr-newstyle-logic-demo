@@ -50,3 +50,10 @@ div.ast-if-then-else > div {
 div.ast-if-then-else > div > *{
 	display: table-cell;
 }
+div.option-select {
+	flex-flow: row;
+	flex-wrap: wrap;
+}
+div.option-select > span > * {
+	margin: 2px;
+}

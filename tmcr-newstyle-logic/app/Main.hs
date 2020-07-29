@@ -47,6 +47,8 @@ data Action = NoOp
             | FlagAddAction FlagAddAction
             | DropdownConfigAction DropdownConfigAction
             | RemoveFlag String
+            | SetChecked String Bool
+            | SetDropdownSelected String String
             -- ...
 deriving instance Eq Action
 deriving instance Ord Action
@@ -171,6 +173,9 @@ updateModel (DropdownConfigAction a) = fromTransition $ case a of
                 RemoveDropdown s -> do
                     modelDropdownOptions %= Map.delete s
                     modelCurrentDropdownSelections %= Map.delete s
+                SetDropdownOptions s o -> do
+                    modelDropdownOptions %= Map.insert s o
+                    modelCurrentDropdownSelections . Control.Lens.at s . _Just %= (\o' -> if o' `elem` o then o' else "")
 updateModel (RemoveRoom r) = fromTransition $ do
                     modelRooms %= Set.delete r
                     modelOneWayWarps %= Set.filter (\w -> warpSourceRoom w /= r && warpTargetRoom w /= r)
@@ -180,6 +185,11 @@ updateModel (RemoveWarp w) = fromTransition $ modelOneWayWarps %= Set.filter ((/
 updateModel (RemoveFlag s) = fromTransition $ do
                     modelFlagSet %= Set.delete s
                     modelActiveFlags %= Set.delete s
+updateModel (SetChecked s b) = fromTransition $ if b
+                    then modelActiveFlags %= Set.insert s
+                    else modelActiveFlags %= Set.delete s
+updateModel (SetDropdownSelected s o) = fromTransition $ 
+                    modelCurrentDropdownSelections %= Map.insert s o
 updateModel (EditSyntaxTree newAST) = fromTransition $ modelAST .= newAST
 updateModel AdvanceRNG = fromTransition $ modelRNG %= fst . random . mkStdGen
 updateModel (SetRNG s) = fromTransition $ case readMaybe s of
@@ -337,7 +347,9 @@ astEditor model = snd (iter helper model') id where
             helper' _ _ = [text "TODO"]
 
 optionSelection :: Model -> View Action
-optionSelection _ = text "TODO: Choose Values for available options"
+optionSelection model = div_ [class_ "option-select"] $ flagSelection model ++ dropdownSelection model where
+    flagSelection model = fmap (\name -> span_ [] [input_ [type_ "checkbox", onChecked (\(Checked b) -> SetChecked name b)], text (toMisoString name)]) $ model ^.. modelFlagSet . folded
+    dropdownSelection model = fmap (\(name, options) -> span_ [] [text (toMisoString name), select_ [onChange (SetDropdownSelected name . fromMisoString)] (option_ [] [] : fmap (option_ [] . (:[]) . text . toMisoString) options)] ) $ model ^. modelDropdownOptions . to Map.assocs
 
 rngSet :: Model -> View Action
 rngSet model = span_ [] [label_ [for_ "rng"] [text "RNG: "], input_ [id_ "rng", value_ (toMisoString $ show $ model ^. modelRNG), onChange (SetRNG . fromMisoString)], button_ [onClick AdvanceRNG] ["Step RNG"]]
