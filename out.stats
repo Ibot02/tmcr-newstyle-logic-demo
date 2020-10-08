@@ -1,24 +1,25 @@
 code size summary per package:
 
 aeson-1.4.2.0-6oFZmLVQz2fGtrfaZYcFm5:81205
-base:                    539121
+base:                    547755
 containers-0.6.0.1-BAqcfV1UBBeCIRjPbUYeSG:143694
 free-5.1.1-Ewm5vmr7ZrwJvxG9XpdmNb:541
-ghc-prim:                63669
-ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:91222
-ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:9027
+ghc-prim:                71050
+ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:107536
+ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:9473
 integer-gmp:             6323
 main:                    75047
+megaparsec-7.0.5-DAwtcmsFBJX5mhqXerJlhD:138474
 miso-1.6.0.0-BIKrBXAalCmHCL9FedlhiP:83206
 mtl-2.2.2-FoAbHAxj1FA5e0sLy6NdSO:21890
 random-1.1-GAiTrdKbvqXBKvSOZFfo82:3120
 scientific-0.3.6.2-GYzjCtWA1vQ45VE9CYiZoV:1482
 text-1.2.3.1-2mMWCa8HNEL4R4p8nnvwO2:13281
-time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4:516182
-tmcr-newstyle-logic-0.1.0.0-HTRd48YYQsnKR6PppnW0L6:520
+time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4:512965
+tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm:352107
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD:2428
 unordered-containers-0.2.9.0-FFYvp66GotsBzKKo1KOI6a:5183
-vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc:403242
+vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc:422222
 
 
 code size per module:
@@ -31,19 +32,22 @@ base
     Control.Exception.Base:             2415
     Data.Either:                        137
     Data.Fixed:                         224
-    Data.Functor.Identity:              2251
-    Data.OldList:                       334
+    Data.Functor.Identity:              472
+    Data.List.NonEmpty:                 2768
+    Data.OldList:                       66
+    Data.Proxy:                         334
     Data.Tuple:                         74003
-    Data.Typeable.Internal:             10700
+    Data.Typeable.Internal:             1026
+    Data.Void:                          10700
     Foreign.C.Error:                    1574
     Foreign.Marshal.Alloc:              3219
     Foreign.Storable:                   3354
-    GHC.Arr:                            7925
+    GHC.Arr:                            13247
     GHC.Base:                           582
     GHC.Char:                           9884
     GHC.Conc.Sync:                      271
     GHC.Enum:                           494
-    GHC.Err:                            10646
+    GHC.Err:                            10648
     GHC.Exception:                      5696
     GHC.Exception.Type:                 6654
     GHC.Fingerprint:                    1043
@@ -61,11 +65,11 @@ base
     GHC.IO.Encoding.UTF8:               22855
     GHC.IO.Exception:                   34901
     GHC.IO.FD:                          368
-    GHC.IO.Handle:                      7182
+    GHC.IO.Handle:                      7184
     GHC.IO.Handle.FD:                   27161
     GHC.IO.Handle.Internals:            3651
     GHC.IO.Handle.Types:                8401
-    GHC.Int:                            7665
+    GHC.Int:                            8887
     GHC.List:                           174
     GHC.MVar:                           244
     GHC.Maybe:                          2522
@@ -73,7 +77,7 @@ base
     GHC.Ptr:                            12033
     GHC.Read:                           5045
     GHC.Real:                           180
-    GHC.STRef:                          15280
+    GHC.STRef:                          15281
     GHC.Show:                           4160
     GHC.Stack.CCS:                      1268
     GHC.Stack.Types:                    14569
@@ -85,7 +89,7 @@ base
     System.Posix.Internals:             23070
     Text.ParserCombinators.ReadP:       168
     Text.ParserCombinators.ReadPrec:    1262
-    Text.Read:                          65286
+    Text.Read:                          65290
     Text.Read.Lex:                      3972
 
 containers-0.6.0.1-BAqcfV1UBBeCIRjPbUYeSG
@@ -97,11 +101,11 @@ free-5.1.1-Ewm5vmr7ZrwJvxG9XpdmNb
     Control.Monad.Free:                 541
 
 ghc-prim
-    GHC.CString:                        28008
+    GHC.CString:                        32642
     GHC.Classes:                        451
     GHC.IntWord64:                      2617
     GHC.Tuple:                          3338
-    GHC.Types:                          29255
+    GHC.Types:                          32002
 
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT
     Data.JSString:                      390
@@ -110,17 +114,24 @@ ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT
     GHCJS.Marshal.Internal:             449
     GHCJS.Marshal.Pure:                 575
     JavaScript.Array.Internal:          973
-    JavaScript.Web.AnimationFrame:      54049
+    JavaScript.Web.AnimationFrame:      70363
 
 ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS
     GHCJS.Prim:                         3632
-    GHCJS.Prim.Internal:                5395
+    GHCJS.Prim.Internal:                5841
 
 integer-gmp
     GHC.Integer.Type:                   6323
 
 main
     Main:                               75047
+
+megaparsec-7.0.5-DAwtcmsFBJX5mhqXerJlhD
+    Text.Megaparsec.Error:              8256
+    Text.Megaparsec.Internal:           6915
+    Text.Megaparsec.Pos:                1700
+    Text.Megaparsec.State:              67554
+    Text.Megaparsec.Stream:             54049
 
 miso-1.6.0.0-BIKrBXAalCmHCL9FedlhiP
     Miso:                               1635
@@ -153,10 +164,11 @@ time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4
     Data.Time.Clock.Internal.CTimespec: 380
     Data.Time.Clock.Internal.UTCTime:   1097
     Data.Time.Clock.POSIX:              1751
-    Data.Time.Clock.System:             512954
+    Data.Time.Clock.System:             509737
 
-tmcr-newstyle-logic-0.1.0.0-HTRd48YYQsnKR6PppnW0L6
-    Data.TMCR.Logic:                    520
+tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm
+    Data.TMCR.ER:                       351587
+    Data.TMCR.Logic.Room:               520
 
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD
     Control.Monad.Trans.Reader:         1021
@@ -168,9 +180,9 @@ unordered-containers-0.2.9.0-FFYvp66GotsBzKKo1KOI6a
 
 vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
     Data.Vector:                        723
-    Data.Vector.Mutable:                402519
+    Data.Vector.Mutable:                421499
 
 
 
-packed metadata: 397958
+packed metadata: 485008
 

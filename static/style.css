@@ -57,3 +57,8 @@ div.option-select {
 div.option-select > span > * {
 	margin: 2px;
 }
+
+.error::before {
+	content: "Error: ";
+	color: red;
+}
