@@ -6,6 +6,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 import Data.TMCR.Logic
+import Data.TMCR.ER
+import Data.TMCR.Logic.Room
 
 import Control.Arrow
 import Control.Monad
@@ -13,12 +15,15 @@ import Data.Maybe
 import Text.Read
 
 import Control.Monad.State
+import Control.Monad.Reader
 
 import Control.Monad.Free
 
 import Data.Functor.Foldable
 
 import System.Random
+
+import Data.Void
 
 import Data.Set (Set)
 import qualified Data.Set as Set
@@ -32,6 +37,8 @@ import Miso.String
 
 import Control.Lens hiding (view)
 import Control.Lens.TH
+
+import qualified Text.Megaparsec as P
 
 staticRoot :: String
 staticRoot = "https://ibot02.github.io/tmcr-newstyle-logic-demo/static/"
@@ -49,6 +56,7 @@ data Action = NoOp
             | RemoveFlag String
             | SetChecked String Bool
             | SetDropdownSelected String String
+            | SetRoomLogic String
             -- ...
 deriving instance Eq Action
 deriving instance Ord Action
@@ -86,6 +94,7 @@ data Model = Model {
         , _modelActiveFlags :: Set String
         , _modelCurrentDropdownSelections :: Map String String
         , _modelRoomDataDialog :: RoomDataDialogModel
+        , _modelRoomLogic :: String
         , _modelRNG :: Int
         } 
 
@@ -133,6 +142,7 @@ initialModel = do
     , _modelRoomDataDialog = RoomDataDialogModel "" "" "" "" "" True
     , _modelCurrentFlagNameInput = ""
     , _modelCurrentDropdownNameInput = ""
+    , _modelRoomLogic = ""
     , _modelRNG = fst $ random g
     }
 
@@ -192,6 +202,7 @@ updateModel (SetDropdownSelected s o) = fromTransition $
                     modelCurrentDropdownSelections %= Map.insert s o
 updateModel (EditSyntaxTree newAST) = fromTransition $ modelAST .= newAST
 updateModel AdvanceRNG = fromTransition $ modelRNG %= fst . random . mkStdGen
+updateModel (SetRoomLogic roomLogic) = fromTransition $ modelRoomLogic .= roomLogic
 updateModel (SetRNG s) = fromTransition $ case readMaybe s of
                 Nothing -> return ()
                 Just i -> modelRNG .= i
@@ -201,6 +212,7 @@ viewModel :: Model -> View Action
 viewModel model = div_ [] [
               roomDataDialog model
             , optionConfiguration model
+            , roomLogicEditor model
             , astEditor model
             , div_ [] [optionSelection model, rngSet model]
             , outputArea model
@@ -283,6 +295,38 @@ optionConfiguration model = div_ [class_ "option-config"] [
                 ]] : fmap (\dropdownName -> span_ [] [button_ [name_ "Remove", onClick (DropdownConfigAction $ RemoveDropdown dropdownName)] [text "-"], text (toMisoString dropdownName), textarea_ [onChange (DropdownConfigAction . SetDropdownOptions dropdownName . Prelude.lines . fromMisoString)] []]) (model ^.. modelDropdownOptions . to Map.keysSet . folded)
             ]
 
+roomLogicEditor :: Model -> View Action
+roomLogicEditor model = div_ [class_ "room-logic-editor"] [
+              textarea_ [onChange (SetRoomLogic . fromMisoString)] [text $ toMisoString $ model ^. modelRoomLogic]
+            , div_ [class_ "room-logic-editor-output"] [
+                case runRoomLogicParser model of
+                    Left err -> span_ [class_ "error"] [text $ toMisoString $ P.errorBundlePretty err]
+                    Right forest -> text $ toMisoString $ show forest
+            ]]
+
+runRoomLogicParser :: Model -> Either (P.ParseErrorBundle String Void) Forest
+runRoomLogicParser model = P.parse (runReaderT logicParser roomLogicTypedefs <* P.eof) "" $ (model ^. modelRoomLogic) ++ "\n"
+
+roomLogicTypedefs = ([ TypedefNamed "node"
+                     , TypedefNamed "chest"
+                     , TypedefNamed "item"
+                     , TypedefNamed "flag"
+                     , TypedefNamed "enemy"
+                     , TypedefNamed "defeat"
+                     , TypedefNamed "tag"
+                     , TypedefNamed "lock"
+                     , TypedefNamed "open"
+                     , TypedefNamed "helper"
+                     , TypedefScoping "area"
+                     , TypedefScoping "room"
+                     , TypedefAnon "and"
+                     , TypedefAnon "or"
+                     , TypedefOp "->"
+                     ],
+                     [ SugarOpList "and" "&&"
+                     , SugarOpList "or" "||"
+                     ])
+
 astEditor :: Model -> View Action
 astEditor model = snd (iter helper model') id where
             model' = fmap (\() -> (pure () :: Free PreTypecheckValueF (), \context -> div_ [class_ "ast"] [selection context (pure ()) options])) $ model ^. modelAST
@@ -296,9 +340,9 @@ astEditor model = snd (iter helper model') id where
                   ("Vanilla", PTCVanillaF)
                 , ("Door to Warp", PTCDoorWarpF)
                 , ("Door to Target", PTCDoorTargetF)
-                , ("Constant Warp(s)", PTCConstantWarpF Data.TMCR.Logic.All)
-                , ("Constant Target(s)", PTCConstantTargetF Data.TMCR.Logic.All)
-                , ("Constant Door(s)", PTCConstantDoorF Data.TMCR.Logic.All)
+                , ("Constant Warp(s)", PTCConstantWarpF Data.TMCR.ER.All)
+                , ("Constant Target(s)", PTCConstantTargetF Data.TMCR.ER.All)
+                , ("Constant Door(s)", PTCConstantDoorF Data.TMCR.ER.All)
                 , ("Constant Atom(s)", PTCAtomSetF Set.empty)
                 , ("Flag", PTCGivenFlagF "")
                 , ("Dropdown", PTCGivenDropdownF "")
@@ -316,7 +360,7 @@ astEditor model = snd (iter helper model') id where
                 ] ++ [("Make Symmetric Function", option_ [disabled_ True] [text "Make Symmetric Function"], pure ())]
             helper :: PreTypecheckValueF (Free PreTypecheckValueF (), (Free PreTypecheckValueF () -> Free PreTypecheckValueF ()) -> View Action) -> (Free PreTypecheckValueF (), (Free PreTypecheckValueF () -> Free PreTypecheckValueF ()) -> View Action)
             helper f = (wrap (fmap fst f), \context -> div_ [class_ "ast"] (selection context (pure ()) options : helper' f context))
-            constantSelection tags names context = selection context Data.TMCR.Logic.All $ ("All", option_ [] [text "All"], Data.TMCR.Logic.All) : fmap (\t -> ("Tagged " ++ t, option_ [] [text $ toMisoString ("Tagged " ++ t)], Tagged t)) tags ++ fmap (\n -> ("Named " ++ n, option_ [] [text $ toMisoString ("Named " ++ n)], Named n)) names
+            constantSelection tags names context = selection context Data.TMCR.ER.All $ ("All", option_ [] [text "All"], Data.TMCR.ER.All) : fmap (\t -> ("Tagged " ++ t, option_ [] [text $ toMisoString ("Tagged " ++ t)], Tagged t)) tags ++ fmap (\n -> ("Named " ++ n, option_ [] [text $ toMisoString ("Named " ++ n)], Named n)) names
             pairHelper c (v1, x1) (v2, x2) context = [div_ [class_ "ast-pair"] [
                           x1 (\v -> context $ wrap $ c v v2)
                         , x2 (\v -> context $ wrap $ c v1 v)
