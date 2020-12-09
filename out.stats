@@ -4,7 +4,7 @@ aeson-1.4.2.0-6oFZmLVQz2fGtrfaZYcFm5:81205
 base:                    555615
 containers-0.6.0.1-BAqcfV1UBBeCIRjPbUYeSG:143694
 free-5.1.1-Ewm5vmr7ZrwJvxG9XpdmNb:541
-ghc-prim:                71681
+ghc-prim:                71695
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT:45625
 ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:4265
 integer-gmp:             6323
@@ -16,7 +16,7 @@ random-1.1-GAiTrdKbvqXBKvSOZFfo82:3120
 scientific-0.3.6.2-GYzjCtWA1vQ45VE9CYiZoV:1482
 text-1.2.3.1-2mMWCa8HNEL4R4p8nnvwO2:13281
 time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4:512965
-tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm:413808
+tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm:399575
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD:2428
 unordered-containers-0.2.9.0-FFYvp66GotsBzKKo1KOI6a:5183
 vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc:421563
@@ -107,7 +107,7 @@ ghc-prim
     GHC.Classes:                        451
     GHC.IntWord64:                      2617
     GHC.Tuple:                          3338
-    GHC.Types:                          32633
+    GHC.Types:                          32647
 
 ghcjs-base-0.2.0.0-JozYZ7GHc7JEfhDrWZm3NT
     Data.JSString:                      390
@@ -171,7 +171,7 @@ time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4
     Data.Time.Clock.System:             509737
 
 tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm
-    Data.TMCR.ER:                       409877
+    Data.TMCR.ER:                       395644
     Data.TMCR.Logic.Room:               3931
 
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD
@@ -188,5 +188,5 @@ vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
 
 
 
-packed metadata: 508888
+packed metadata: 507279
 
