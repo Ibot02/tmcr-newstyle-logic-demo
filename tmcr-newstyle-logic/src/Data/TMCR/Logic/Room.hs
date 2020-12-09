@@ -59,7 +59,10 @@ scn = Text.Megaparsec.Char.Lexer.space space1 (skipLineComment "#") empty
 logicParser :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Forest
 logicParser scopes = many $ nonIndented scn $ parseTree scopes where
     parseTree :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
-    parseTree scopes = indentBlock scn $ parseValue scopes >>= \v -> parseTreeHeader v (drop 1 scopes) <|> return (IndentNone (Node v ModeDefault []))
+    parseTree [] = parseSugarOpList <|> parseTree' []
+    parseTree scopes = parseTree' scopes
+    parseTree' :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
+    parseTree' scopes = indentBlock scn $ parseValue scopes >>= \v -> parseTreeHeader v (drop 1 scopes) <|> return (IndentNone (Node v ModeDefault []))
     parseTreeHeader :: Value -> [ScopeName] -> ReaderT [Sugar] (Parsec Void String) (IndentOpt (ReaderT [Sugar] (Parsec Void String)) Tree Tree)
     parseTreeHeader v scopes = do
         m <- parseMode
@@ -98,7 +101,10 @@ logicParser scopes = many $ nonIndented scn $ parseTree scopes where
     inlineChildren :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Forest
     inlineChildren scopes = label "inlined Childen" $ inlineChild scopes `sepBy1` (symbol sc ",")
     inlineChild :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
-    inlineChild scopes = between (symbol sc "(") (symbol sc ")") (inlineChild scopes) <|> (do
+    inlineChild [] = parseSugarOpList <|> inlineChild' []
+    inlineChild scopes = inlineChild' scopes
+    inlineChild' :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
+    inlineChild' scopes = between (symbol sc "(") (symbol sc ")") (inlineChild scopes) <|> (do
         v <- parseValue scopes 
         (m,c) <- option (ModeDefault, []) $ do
             m <- parseMode

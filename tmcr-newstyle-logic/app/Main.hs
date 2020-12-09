@@ -300,7 +300,7 @@ roomLogicEditor model = div_ [class_ "room-logic-editor"] [
               textarea_ [rows_ "10", onChange (SetRoomLogic . fromMisoString)] [text $ toMisoString $ model ^. modelRoomLogic]
             , div_ [class_ "room-logic-editor-output"] [
                 case runRoomLogicParser model of
-                    Left err -> span_ [class_ "error"] [text $ toMisoString $ P.errorBundlePretty err]
+                    Left err -> span_ [class_ "error"] [pre_ [] [text $ toMisoString $ P.errorBundlePretty err]]
                     Right forest -> text $ toMisoString $ show forest
             ]]
 
