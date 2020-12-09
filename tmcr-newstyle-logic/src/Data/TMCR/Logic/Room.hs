@@ -31,6 +31,7 @@ data Value = Anon String
            | NamedScoped String ScopedName
            | NamedScoping String Name
            | Edge ScopedName ScopedName
+           | EdgeUndirected ScopedName ScopedName
            deriving (Eq, Ord, Show)
 
 data ScopedName = Global Name
@@ -68,7 +69,7 @@ logicParser scopes = many $ nonIndented scn $ parseTree scopes where
         m <- parseMode
         (IndentNone . Node v m <$> inlineChildren scopes) <|> (return $ IndentSome Nothing (return . Node v m) (parseTree scopes))
     parseValue :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Value
-    parseValue [] = parseAnonOrScoped <|> parseEdge
+    parseValue [] = parseAnonOrScoped <|> try parseEdge <|> parseUndirectedEdge
     parseValue (scope:_) = do
         typename <- symbol sc scope
         scopeName <- parseName
@@ -76,6 +77,11 @@ logicParser scopes = many $ nonIndented scn $ parseTree scopes where
     parseAnonOrScoped = do
         typename <- parseType
         (NamedScoped typename <$> parseScopedName) <|> (return $ Anon typename)
+    parseUndirectedEdge = label "edge" $ do
+        source <- parseLocalName
+        symbol sc "<->"
+        target <- parseLocalName
+        return $ EdgeUndirected source target
     parseEdge = label "edge" $ do
         source <- parseLocalName
         symbol sc "->"
