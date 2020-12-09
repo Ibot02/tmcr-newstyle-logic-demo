@@ -63,7 +63,7 @@ logicParser scopes = many $ nonIndented scn $ parseTree scopes where
     parseTreeHeader :: Value -> [ScopeName] -> ReaderT [Sugar] (Parsec Void String) (IndentOpt (ReaderT [Sugar] (Parsec Void String)) Tree Tree)
     parseTreeHeader v scopes = do
         m <- parseMode
-        (IndentNone . Node v m <$> inlineChildren scopes) <|> (return $ IndentMany Nothing (return . Node v m) (parseTree scopes <* lookAhead (void eol <|> eof)))
+        (IndentNone . Node v m <$> inlineChildren scopes) <|> (return $ IndentSome Nothing (return . Node v m) (parseTree scopes))
     parseValue :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Value
     parseValue [] = parseAnonOrScoped <|> parseEdge
     parseValue (scope:_) = do
@@ -73,18 +73,18 @@ logicParser scopes = many $ nonIndented scn $ parseTree scopes where
     parseAnonOrScoped = do
         typename <- parseType
         (NamedScoped typename <$> parseScopedName) <|> (return $ Anon typename)
-    parseEdge = do
+    parseEdge = label "edge" $ do
         source <- parseLocalName
         symbol sc "->"
         target <- parseLocalName
         return $ Edge source target
     parseType = lexeme sc $ (:) <$> lowerChar <*> many alphaNumChar
     parseScopedName :: ReaderT [Sugar] (Parsec Void String) ScopedName
-    parseScopedName = (char 'g' *> (Global <$> parseName)) <|> (try $ FullWildcard <$ symbol sc "**") <|> parseLocalName
+    parseScopedName = label "name" $ (char 'g' *> (Global <$> parseName)) <|> (try $ FullWildcard <$ symbol sc "**") <|> parseLocalName
     parseLocalName :: ReaderT [Sugar] (Parsec Void String) ScopedName
     parseLocalName = (lexeme sc $ Scoped <$> (parseName' `sepBy1` char '.'))
     parseName :: ReaderT [Sugar] (Parsec Void String) Name
-    parseName = lexeme sc parseName'
+    parseName = lexeme sc parseName' <?> "name"
     parseName' :: ReaderT [Sugar] (Parsec Void String) Name
     parseName' = (QuotedName <$> between (char '"') (char '"') (many possiblyEscapedChar)) <|> (PlainName <$> ((:) <$> upperChar <*> many alphaNumChar)) <|> (Wildcard <$ char '*')
     possiblyEscapedChar :: ReaderT [Sugar] (Parsec Void String) Char
