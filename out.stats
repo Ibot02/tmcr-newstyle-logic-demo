@@ -10,16 +10,16 @@ ghcjs-prim-0.1.1.0-EXzjGVHQlAS2XAXcu0iCbS:4265
 integer-gmp:             6323
 main:                    75047
 megaparsec-7.0.5-DAwtcmsFBJX5mhqXerJlhD:221777
-miso-1.6.0.0-BIKrBXAalCmHCL9FedlhiP:84422
+miso-1.6.0.0-BIKrBXAalCmHCL9FedlhiP:84696
 mtl-2.2.2-FoAbHAxj1FA5e0sLy6NdSO:21890
 random-1.1-GAiTrdKbvqXBKvSOZFfo82:3120
 scientific-0.3.6.2-GYzjCtWA1vQ45VE9CYiZoV:1482
 text-1.2.3.1-2mMWCa8HNEL4R4p8nnvwO2:13281
 time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4:512965
-tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm:399575
+tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm:461137
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD:2428
 unordered-containers-0.2.9.0-FFYvp66GotsBzKKo1KOI6a:5183
-vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc:421563
+vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc:422028
 
 
 code size per module:
@@ -143,7 +143,7 @@ miso-1.6.0.0-BIKrBXAalCmHCL9FedlhiP
     Miso.Diff:                          303
     Miso.Effect:                        10990
     Miso.Event.Decoder:                 23481
-    Miso.Event.Types:                   2782
+    Miso.Event.Types:                   3056
     Miso.Html.Element:                  836
     Miso.Html.Event:                    22052
     Miso.Html.Internal:                 16770
@@ -171,7 +171,7 @@ time-1.8.0.2-3d3i5aGvKEfEHwUSNgliL4
     Data.Time.Clock.System:             509737
 
 tmcr-newstyle-logic-0.1.0.0-2jWTeVqNL07AhBuUTQBHrm
-    Data.TMCR.ER:                       395644
+    Data.TMCR.ER:                       457206
     Data.TMCR.Logic.Room:               3931
 
 transformers-0.5.5.0-G04gvztnbOh179zpc38KGD
@@ -184,9 +184,9 @@ unordered-containers-0.2.9.0-FFYvp66GotsBzKKo1KOI6a
 
 vector-0.12.0.3-Ljxp3Ug7QBk3GWhyQE0Ewc
     Data.Vector:                        723
-    Data.Vector.Mutable:                420840
+    Data.Vector.Mutable:                421305
 
 
 
-packed metadata: 507279
+packed metadata: 513994
 
