@@ -297,7 +297,7 @@ optionConfiguration model = div_ [class_ "option-config"] [
 
 roomLogicEditor :: Model -> View Action
 roomLogicEditor model = div_ [class_ "room-logic-editor"] [
-              textarea_ [onChange (SetRoomLogic . fromMisoString)] [text $ toMisoString $ model ^. modelRoomLogic]
+              textarea_ [rows_ "10", onChange (SetRoomLogic . fromMisoString)] [text $ toMisoString $ model ^. modelRoomLogic]
             , div_ [class_ "room-logic-editor-output"] [
                 case runRoomLogicParser model of
                     Left err -> span_ [class_ "error"] [text $ toMisoString $ P.errorBundlePretty err]
@@ -305,29 +305,11 @@ roomLogicEditor model = div_ [class_ "room-logic-editor"] [
             ]]
 
 runRoomLogicParser :: Model -> Either (P.ParseErrorBundle String Void) Forest
-runRoomLogicParser model = P.parse (runReaderT logicParser roomLogicTypedefs <* P.eof) "" $ (model ^. modelRoomLogic) ++ "\n"
+runRoomLogicParser model = P.parse (runReaderT (logicParser ["area", "room"]) roomLogicTypedefs <* P.eof) "" $ (model ^. modelRoomLogic) ++ "\n"
 
-roomLogicTypedefs = ([ TypedefNamed "node"
-                     , TypedefNamed "chest"
-                     , TypedefNamed "item"
-                     , TypedefNamed "flag"
-                     , TypedefNamed "enemy"
-                     , TypedefNamed "defeat"
-                     , TypedefNamed "tag"
-                     , TypedefNamed "lock"
-                     , TypedefNamed "open"
-                     , TypedefNamed "helper"
-                     , TypedefNamed "entrance"
-                     , TypedefNamed "exit"
-                     , TypedefScoping "area"
-                     , TypedefScoping "room"
-                     , TypedefAnon "and"
-                     , TypedefAnon "or"
-                     , TypedefOp "->"
-                     ],
-                     [ SugarOpList "and" "&&"
-                     , SugarOpList "or" "||"
-                     ])
+roomLogicTypedefs = [ SugarOpList "and" "&&"
+                    , SugarOpList "or" "||"
+                    ]
 
 astEditor :: Model -> View Action
 astEditor model = snd (iter helper model') id where

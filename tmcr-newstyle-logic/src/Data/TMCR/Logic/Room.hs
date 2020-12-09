@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Data.TMCR.Logic.Room where
 
 import Text.Megaparsec
@@ -16,23 +17,25 @@ import Data.Void
 data LogicRoom = LogicRoom
                 deriving (Eq, Ord, Show)
 
-data Typedef = TypedefNamed String
-             | TypedefScoping String
-             | TypedefAnon String
-             | TypedefOp String
-             deriving (Eq, Ord, Show)
-
 data Sugar = SugarOpList String String
          deriving (Eq, Ord, Show)
 
+data Name = PlainName String
+          | QuotedName String
+          | Wildcard
+          deriving (Eq, Ord, Show)
+
+type ScopeName = String
+
 data Value = Anon String
            | NamedScoped String ScopedName
-           | NamedScoping String String
-           | Op ScopedName String ScopedName
+           | NamedScoping String Name
+           | Edge ScopedName ScopedName
            deriving (Eq, Ord, Show)
 
-data ScopedName = Global String
-                | Scoped [String]
+data ScopedName = Global Name
+                | Scoped [Name]
+                | FullWildcard
                 deriving (Eq, Ord, Show)
 
 data Mode = ModeDefault --select or new
@@ -45,76 +48,64 @@ data Tree = Node Value Mode Forest
             deriving (Eq, Ord, Show)
 
 nonLinebreakSpace :: Char -> Bool
-nonLinebreakSpace c = isSeparator c && not (c `elem` "\n\r")
+nonLinebreakSpace c = isSeparator c && (c `notElem` "\n\r")
 
-sc :: (MonadParsec e s m, Token s ~ Char) => m ()
-sc = Text.Megaparsec.Char.Lexer.space (void $ takeWhile1P (Just "space") nonLinebreakSpace) empty empty
+sc :: (MonadParsec e String m) => m ()
+sc = Text.Megaparsec.Char.Lexer.space (void $ takeWhile1P (Just "space") nonLinebreakSpace) (skipLineComment "#") empty
 
-logicParser :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Forest
-logicParser = parseForest "" where
-    parseForest :: String -> ReaderT ([Typedef], [Sugar]) (Parsec Void String) Forest
-    parseForest indent = many (eol @ Void @ String) *> some (parseTree indent <* many eol)
-    parseTree :: String -> ReaderT ([Typedef], [Sugar]) (Parsec Void String) Tree
-    parseTree indent = try (consumeIndent indent) *> ((parseSugarOpList <* eol) <|> (do
-        v <- parseValue
-        (m,c) <- (do
-            m <- parseMode
-            c <- label "Children" $ try (inlineChildren <* eol) <|> (eol *> multilineChildren indent)
-            return (m, c)
-            ) <|> ((ModeDefault, []) <$ eol)
-        return $ Node v m c
-        ))
-    parseValue :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Value
-    parseValue = asks fst >>= choice . fmap (\case
-        TypedefNamed t -> try $ do
-            t' <- symbol sc t
-            (NamedScoped t' <$> parseScopedName)
-        TypedefAnon t -> try $ Anon <$> symbol sc t
-        TypedefOp t -> try $ Op <$> parseScopedName <*> symbol sc t <*> parseScopedName
-        TypedefScoping t -> try $ do
-            t' <- symbol sc t
-            NamedScoping t' <$> lexeme sc parseName
-        )
-    parseScopedName :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) ScopedName
-    parseScopedName = lexeme sc $ (char 'g' *> (Global <$> parseName)) <|> (Scoped <$> parseName `sepBy` (char '.'))
-    parseName :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) String
-    parseName = between (char '"') (char '"') (many possiblyEscapedChar) <|> many alphaNumChar
-    possiblyEscapedChar :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Char
+scn :: (MonadParsec e String m) => m ()
+scn = Text.Megaparsec.Char.Lexer.space space1 (skipLineComment "#") empty
+
+logicParser :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Forest
+logicParser scopes = many $ nonIndented scn $ parseTree scopes where
+    parseTree :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
+    parseTree scopes = indentBlock scn $ parseValue scopes >>= \v -> parseTreeHeader v (drop 1 scopes) <|> return (IndentNone (Node v ModeDefault []))
+    parseTreeHeader :: Value -> [ScopeName] -> ReaderT [Sugar] (Parsec Void String) (IndentOpt (ReaderT [Sugar] (Parsec Void String)) Tree Tree)
+    parseTreeHeader v scopes = do
+        m <- parseMode
+        (IndentNone . Node v m <$> inlineChildren scopes) <|> (return $ IndentMany Nothing (return . Node v m) (parseTree scopes <* lookAhead (void eol <|> eof)))
+    parseValue :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Value
+    parseValue [] = parseAnonOrScoped <|> parseEdge
+    parseValue (scope:_) = do
+        typename <- symbol sc scope
+        scopeName <- parseName
+        return $ NamedScoping typename scopeName
+    parseAnonOrScoped = do
+        typename <- parseType
+        (NamedScoped typename <$> parseScopedName) <|> (return $ Anon typename)
+    parseEdge = do
+        source <- parseLocalName
+        symbol sc "->"
+        target <- parseLocalName
+        return $ Edge source target
+    parseType = lexeme sc $ (:) <$> lowerChar <*> many alphaNumChar
+    parseScopedName :: ReaderT [Sugar] (Parsec Void String) ScopedName
+    parseScopedName = (char 'g' *> (Global <$> parseName)) <|> (try $ FullWildcard <$ symbol sc "**") <|> parseLocalName
+    parseLocalName :: ReaderT [Sugar] (Parsec Void String) ScopedName
+    parseLocalName = (lexeme sc $ Scoped <$> (parseName' `sepBy1` char '.'))
+    parseName :: ReaderT [Sugar] (Parsec Void String) Name
+    parseName = lexeme sc parseName'
+    parseName' :: ReaderT [Sugar] (Parsec Void String) Name
+    parseName' = (QuotedName <$> between (char '"') (char '"') (many possiblyEscapedChar)) <|> (PlainName <$> ((:) <$> upperChar <*> many alphaNumChar)) <|> (Wildcard <$ char '*')
+    possiblyEscapedChar :: ReaderT [Sugar] (Parsec Void String) Char
     possiblyEscapedChar = do
         c <- satisfy (/= '"')
         case c of
             '\\' -> anySingle
             _ -> return c
-    parseMode :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Mode
+    parseMode :: ReaderT [Sugar] (Parsec Void String) Mode
     parseMode = lexeme sc $ label "mode" $ (ModeDefault <$ char ':') <|> (ModeAppend <$ string "+:") <|> (ModeReplace <$ string "!:")
-    inlineChildren :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Forest
-    inlineChildren = label "inlined Childen" $ inlineChild `sepBy1` (symbol sc ",")
-    inlineChild :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Tree
-    inlineChild = between (symbol sc "(") (symbol sc ")") inlineChild <|> (do
-        v <- parseValue
+    inlineChildren :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Forest
+    inlineChildren scopes = label "inlined Childen" $ inlineChild scopes `sepBy1` (symbol sc ",")
+    inlineChild :: [ScopeName] -> ReaderT [Sugar] (Parsec Void String) Tree
+    inlineChild scopes = between (symbol sc "(") (symbol sc ")") (inlineChild scopes) <|> (do
+        v <- parseValue scopes 
         (m,c) <- option (ModeDefault, []) $ do
             m <- parseMode
-            c <- inlineChildren
+            c <- (inlineChildren $ drop 1 scopes)
             return (m,c)
         return $ Node v m c
         )
-    multilineChildren :: String -> ReaderT ([Typedef], [Sugar]) (Parsec Void String) Forest
-    multilineChildren indent = do
-        indent' <- findIndent indent
-        parseForest indent'
-    findIndent :: String -> ReaderT ([Typedef], [Sugar]) (Parsec Void String) String
-    findIndent indent = try $ lookAhead $ do
-        consumeIndent indent
-        indent' <- takeWhile1P (Just "indentation") nonLinebreakSpace
-        satisfy (not . isSeparator)
-        return $ indent ++ indent'
-    consumeIndent :: String -> ReaderT ([Typedef], [Sugar]) (Parsec Void String) String
-    consumeIndent indent = string indent <?> "indentation"
-    parseSugarOpList :: ReaderT ([Typedef], [Sugar]) (Parsec Void String) Tree
-    parseSugarOpList = asks snd >>= choice . fmap (\(SugarOpList name sep) -> try $
-        between (symbol sc "(") (symbol sc ")") $ Node (Anon name) ModeDefault <$> inlineChild `sepBy` (symbol sc sep))
-
-
-
-
-
+    parseSugarOpList :: ReaderT [Sugar] (Parsec Void String) Tree
+    parseSugarOpList = ask >>= choice . fmap (\(SugarOpList name sep) -> try $
+        between (symbol sc "(") (symbol sc ")") $ Node (Anon name) ModeDefault <$> inlineChild [] `sepBy` (symbol sc sep))
