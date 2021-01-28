@@ -210,12 +210,12 @@ updateModel NoOp = fromTransition $ return ()
 
 viewModel :: Model -> View Action
 viewModel model = div_ [] [
-              roomDataDialog model
-            , optionConfiguration model
-            , roomLogicEditor model
-            , astEditor model
-            , div_ [] [optionSelection model, rngSet model]
-            , outputArea model
+            --   roomDataDialog model
+            -- , optionConfiguration model
+              roomLogicEditor model
+            -- , astEditor model
+            -- , div_ [] [optionSelection model, rngSet model]
+            -- , outputArea model
             , link_ [ rel_ "stylesheet"
                     , href_ (toMisoString $ staticRoot ++ "style.css")
                     ]
@@ -307,8 +307,8 @@ roomLogicEditor model = div_ [class_ "room-logic-editor"] [
 runRoomLogicParser :: Model -> Either (P.ParseErrorBundle String Void) Forest
 runRoomLogicParser model = P.parse (runReaderT (logicParser ["area", "room"]) roomLogicTypedefs <* P.eof) "" $ (model ^. modelRoomLogic) ++ "\n"
 
-roomLogicTypedefs = [ SugarOpList "and" "&&"
-                    , SugarOpList "or" "||"
+roomLogicTypedefs = [ SugarOpList "and" "&"
+                    , SugarOpList "or" "|"
                     ]
 
 astEditor :: Model -> View Action
